@@ -1,3 +1,38 @@
+import bpy
+
+## CREATE PANEL FOR SHADER TAB ##
+class somatomapNode(bpy.types.Panel):
+    """Creates a Panel in the Object properties window"""
+    bl_label = "Custom Somatomap Node"
+    bl_idname = "NODE_BLUR"
+    bl_space_type = 'NODE_EDITOR'
+    bl_region_type = 'UI'
+    bl_category = "New Tab"
+
+    def draw(self, context):
+        layout = self.layout
+
+        row = layout.row()
+        row.operator("")
+
+def create_blur_group(context, operator, group_name):
+
+
+def register():
+    bpy.utils.register_class(somatomapNode)
+
+
+def unregister():
+    bpy.utils.unregister_class(somatomapNode)
+
+
+if __name__ == "__main__":
+    register()
+########################################
+###
+########################################
+
+
 # noise texture
 #bpy.ops.node.add_node(type="ShaderNodeTexNoise", use_transform=True)
 
