@@ -20,49 +20,49 @@ def create_blur_group(context, operator, group_name):
     
     #add a group
     blur_group = bpy.data.node_groups.new(group_name, 'ShaderNodeTree')
+    
     #create group for inputs
+        #group in
     group_in  = blur_group.nodes.new('NodeGroupInput')
+    group_in.location = (-400,0)
+        #group out
+    group_out = blur_group.nodes.new('NodeGroupOutput')
+    group_out.location = (400,0)
+    
+        #outputs
     blur_group.inputs.new('NodeSocketFloat', 'Blur Amount')
     blur_group.inputs.new('NodeSocketFloat', 'Blur Quality')
-        
-    #create group output
-    group_out = blur_group.nodes.new('NodeGroupOutput')
+        #inputs
     blur_group.outputs.new('NodeSocketColor', 'Color')
             
     #add noise texture
-    noise_texture = blur_group.nodes.new(type="ShaderNodeTexNoise", use_transform=True)
+    noise_texture = blur_group.nodes.new(type="ShaderNodeTexNoise")
+    noise_texture.location = (-200,-150)
     #add texture coordinate
-    texture_coordinate = blur_group.nodes.new(type="ShaderNodeTexCoord", use_transform=True)
+    texture_coordinate = blur_group.nodes.new(type="ShaderNodeTexCoord")
+    texture_coordinate.location = (-200,150)
             
-    #add mixRBG node 
-    mixRGBadd = blur_group.nodes.new(type="ShaderNodeMixRGB", use_transform=True)
-    bpy.data.materials["Material"].node_tree.nodes["Mix"].blend_type = 'ADD'
-    bpy.data.materials["Material"].node_tree.nodes["Mix"].inputs[0].default_value = 0.1
+    #add mixRGB node 
+    mixRGBadd = blur_group.nodes.new(type="ShaderNodeMixRGB")
+    mixRGBadd.blend_type='ADD'
+    mixRGBadd.inputs[0].default_value = 0.1
+    mixRGBadd.location = (200,150)
 
-    #add another mixRBG, this one will be subtract blend type
-    mixRGBsub = blur_group.nodes.new(type="ShaderNodeMixRGB", use_transform=True)
-    bpy.data.materials["Material"].node_tree.nodes["Mix.001"].blend_type = 'SUBTRACT'
-    bpy.data.materials["Material"].node_tree.nodes["Mix.001"].inputs[0].default_value = 1
+    #add another mixRGB, this one will be subtract blend type
+    mixRGBsub = blur_group.nodes.new(type="ShaderNodeMixRGB")
+    mixRGBsub.blend_type='SUBTRACT'
+    mixRGBsub.inputs[0].default_value = 1
+    mixRGBsub.location = (75,-150)
             
     # Create links between nodes
     link = blur_group.links.new
-
-    #connects texture coordinate UV to mixRBG(add) Color 1
-    link(texture_coordinate.outputs[2], mixRBGadd.inputs[1])
-            
-    #connects noise texture color output to mixRGB(sub) Color 1
-    link(noise_texture.outputs[1], mixRBGsub.inputs[1])
-            
-    #connects mixRGB (sub) Color output to mixRGB(add) Color 2
-    link(mixRGBsub.outputs[0], mixRBGadd.inputs[1])
-            
-    #connect group blur amount output to mixRBG(add) Fac
-    link(group_in.outputs[0], mixRBGadd.inputs[0])
-            
-    #connect group blur quality output to mixRBG(add) Fac
+   
+    link(group_in.outputs[0], mixRGBadd.inputs[0])
     link(group_in.outputs[1], noise_texture.inputs[1])
-            
-    #connect mixRGB(add) to group output Color 
+    
+    link(texture_coordinate.outputs[2], mixRGBadd.inputs[1])
+    link(noise_texture.outputs[1], mixRGBsub.inputs[1])
+    link(mixRGBsub.outputs[0], mixRGBadd.inputs[2])
     link(mixRGBadd.outputs[0], group_out.inputs[0])
             
     return blur_group
@@ -70,15 +70,17 @@ def create_blur_group(context, operator, group_name):
 
 # Create a custom operator for the blur shader
 class SHADER_OT_BLUR(bpy.types.Operator):
-    bl_label = 'Blur Textture'
+    bl_label = 'Blur Texture'
     bl_idname = 'shader.blur_ot'
 
     def execute(self, context):
         custom_node_name = "Blur Node"
-        my_group = create_test_group(self, context, custom_node_name)
+        my_group = create_blur_group(self, context, custom_node_name)
         node_tree = context.object.active_material.node_tree
         new_node = node_tree.nodes.new("ShaderNodeGroup")
         new_node.node_tree = bpy.data.node_groups[my_group.name]
+        
+        return {'FINISHED'}
 
 
 def register():
