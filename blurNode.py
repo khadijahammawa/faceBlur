@@ -38,6 +38,7 @@ def create_blur_group(context, operator, group_name):
     #add noise texture
     noise_texture = blur_group.nodes.new(type="ShaderNodeTexNoise")
     noise_texture.location = (-200,-150)
+    
     #add texture coordinate
     texture_coordinate = blur_group.nodes.new(type="ShaderNodeTexCoord")
     texture_coordinate.location = (-200,150)
@@ -56,13 +57,23 @@ def create_blur_group(context, operator, group_name):
             
     # Create links between nodes
     link = blur_group.links.new
-   
+        
+        #1)blur amount -> mixRGB color Fac
     link(group_in.outputs[0], mixRGBadd.inputs[0])
-    link(group_in.outputs[1], noise_texture.inputs[1])
-    
+        
+        #2)blur quality -> noise texture scale
+    blur_group.links.new(group_in.outputs[1], noise_texture.inputs[1])
+        
+        #3)text coord UV -> mixRGB Color 1
     link(texture_coordinate.outputs[2], mixRGBadd.inputs[1])
+    
+        #4)noise text color -> mixRGB sub color 1
     link(noise_texture.outputs[1], mixRGBsub.inputs[1])
+        
+        #5)mixRGB sub color -> mixRGB add color 2
     link(mixRGBsub.outputs[0], mixRGBadd.inputs[2])
+        
+        #6)midRGBadd color -> group output color
     link(mixRGBadd.outputs[0], group_out.inputs[0])
             
     return blur_group
@@ -81,7 +92,6 @@ class SHADER_OT_BLUR(bpy.types.Operator):
         new_node.node_tree = bpy.data.node_groups[my_group.name]
         
         return {'FINISHED'}
-
 
 def register():
     bpy.utils.register_class(shaderPanel)
